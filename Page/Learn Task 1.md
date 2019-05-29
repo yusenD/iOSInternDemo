@@ -10,6 +10,7 @@ XCode创建项目的时候，会自动引入Foundation框架：`#import <Foundat
 
 
 Foundation框架只是Cocoa的一部分，并没有内置于OC语言中（如果开发iOS程序，还需要用到UIKit框架），Foundation框架包含了很多的基础类，下图显示了部分类：
+
 ![类图](https://i.loli.net/2019/05/28/5ced23a5081f638142.jpg)
 
 在XCode中，Shift+Command+0键打开API文档可以进行查询具体使用方法。
