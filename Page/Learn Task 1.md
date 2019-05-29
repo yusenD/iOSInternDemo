@@ -1,22 +1,5 @@
 # Objective-C Learn 1
 
-## Learn Task
-
-* Foudation
-* 属性
-  * strong
-  * retain
-  * copy
-  * assign
-* Extension
-* Protocol
-* Delegate
-* Block
-* 引用计数
-  * MRC
-  * ARC：自动引用计数（Automatic Reference Counting）
-  * 循环引用
-
 ## Foundation框架
 
 ### 概述
@@ -190,7 +173,7 @@ Block对象是一段代码（其实就是匿名的函数代码块）
 ```
 
 
-
+-------
 
 ## 内存管理
 
@@ -218,11 +201,22 @@ Cocoa中有一个自动释放池（Auto Release Pool）的概念，在`main`函�
 
 程序员在内存管理上花了大量时间，并且容易出现内存泄漏现象。所以引入了自动引用计数（Automatic Reference Counting，ARC）。ARC会自动追踪对象并决定哪一个会不会使用到的，编译器会自动插入retain和release语句，无需自己动手。从这里也能够看出，ARC与JVM的垃圾回收器不是一回事。
 
+在ARC模式下，是不能调用release，retain，retaincount的，如果调用了编译器会报错。而且不允许再调用[super dealloc]，不过仍然可以重写dealloc。
+
 ### 循环引用
 
-## Extension 扩展
+当两个对象互相持有对方的强引用，并且这两个对象的引用计数都不是0的时候，便造成了引用循环。
 
-类扩展
+如图所示：
+
+![循环引用图-来源：掘金](https://i.loli.net/2019/05/29/5cee12c24785685247.jpg)
+
+可以从下面的思路入手：
+* 注意变量作用域，使用 autorelease 让编译器来处理引用
+* 使用弱引用(weak)
+* 实例变量完成工作后置为nil
+
+----------
 
 ## Protocol 协议
 
@@ -247,7 +241,7 @@ Cocoa中有一个自动释放池（Auto Release Pool）的概念，在`main`函�
 @end
 ```
 
-
+---------
 
 ## Delegate 代理
 
@@ -257,33 +251,97 @@ Cocoa中有一个自动释放池（Auto Release Pool）的概念，在`main`函�
 * 代理方：根据指定的协议，完成委托放需要实现的功能（需求）。
 * 委托方：根据指定的协议，指定代理方完成什么功能。
 
-下面以老师给学生留作业这样一个例子简单理解Delegate。
+下面以显示器显示主机画面这样一个例子简单理解Delegate。
 
-step1：
+| Step | 理解 |
+| --- | --- |
+| Step1 | 声明一个协议并在协议中明确必须做什么和可以做什么 （如何显示画面功能）|
+| Step2 | 委托方添加一个属性deleget，该属性向外界说明我有一个代理职位 （主机有一个HDMI接口）|
+| Step3 | 委托方在需要完成某种协议中确定功能的时候，告诉代理帮我完成这个功能（主机需要显示画面）|
+| Step4 | 代理方需要遵从step1中的协议 （如何显示画面）|
+| Step5 | 代理方需要成为委托方的代理  （主机连接到显示器）|
+| Step6 | 代理方在接受到委托方需要完成某种功能的信息后，实现该功能 （显示画面）|
 
-
-| --- | --- | --- |
-| Step1 | 规定 今天的作业是什么  | 声明一个协议并在协议中明确必须做什么和可以做什么 |
-| Step1 | 规定 今天的作业是什么  | 声明一个协议并在协议中明确必须做什么和可以做什么 |
-
-step2：委托方添加一个属性deleget，该属性向外界说明我有一个代理职位（需要遵从step1中的协议），类比：主机上的视频接口（VGA、HDMI）；
-step3：委托方在需要完成某种功能的（协议中已提前确定）时候，告诉代理帮我完成这个功能，类比：主机需要显示画面；
-step4：代理方需要遵从step1中的协议；
-step5：代理方需要成为委托方的代理，类比：显示器工作VGA线连接到主机；
-step6：代理方在接受到委托方需要完成某种功能的信息后，实现该功能，类比：显示画面
+--------
 
 ## Category 分类
 
+在使用Objective-C面向对象编程的时候，如果想要为现有的类添加一些新的行为，我们可以通过类别（Category）这种方式。
+通过类别，我们可以做到：
+* 可以把类的实现分开在几个不同的文件里面
+* 声明私有方法
 
+举个🌰：
+现在有一个Person类如下：
+```
+//Person.h:
+#import <Foundation/Foundation.h>
+@interface Person : NSObject
+-(void) name;
+@end
 
+//person.m
+#import "Person.h"
+@implementation Person
+-(void) name{
+    NSLog(@"my name");
+}
+@end
 
+```
+现在我们在不增加子类、不修改Person的情况下添加一个eat方法。添加两个文件Person+Eat.h和 Person+Eat.m。
 
+```
+//Person+Eat.h
+@interface Person (Eat)
+-(void) eat;
+@end
 
+//Person+Eat.m
+@implementation Person (Eat)
+-(void) eat{
+    NSLog(@"i'm eating");
+}
+@end
+
+```
+
+然后我们可以在`main`里调用。
+这里发现，如果有同名方法，Category里面的方法会覆盖原来class的方法，然后编译器给出了warning，不推荐这样写的。
+
+--------
+
+## Extension 扩展
+
+类扩展Extension又叫匿名分类，可以为原有类添加新的属性(成员变量)和方法。需要注意下面几点
+* 类扩展的私有方法必须实现，否则会发生警告，因为类扩展是在编译阶段被添加到类中
+* 类扩展的私有方法在原有类的.m中实现
+* 定义在 .m 文件中的类扩展方法为私有的，定义在 .h 文件中的类扩展方法为公有的
+
+示例：
+```
+//Person+Extension.h
+#import "Person.h"
+@interface Person ()
+@property (nonatomic, assign) int age;
+- (void)yeasOfMan;
+@end
+
+//在Person.m中实现
+实现类扩展的方法
+-(void)yearsOfMan{
+    NSLog
+}
+
+```
+
+--------
 
 
 > 参考资料：
 > Objective-C 编程（第二版）
 > Objective-C 基础教程
+> 循环引用图来自：https://juejin.im/entry/58480bd4128fe10058bf1a3a
 > https://github.com/qinjx/30min_guides/blob/master/ios.md
 > https://stackoverflow.com/questions/8927727/objective-c-arc-strong-vs-retain-and-weak-vs-assign
 > https://stackoverflow.com/questions/626898/how-do-i-create-delegates-in-objective-c
